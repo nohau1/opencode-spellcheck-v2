@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": [
+    {
+      "package": "/absolute/path/to/opencode-spellcheck-v2",
+      "options": {
+        "debounceMs": 250,
+        "minLength": 3,
+        "fastMode": true,
+        "showStatusLine": true,
+        "toastDuration": 6000,
+        "extraWords": []
+      }
+    }
+  ]
+}

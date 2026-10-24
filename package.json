@@ -1,0 +1,47 @@
+{
+  "name": "opencode-spellcheck-v2",
+  "version": "1.0.0",
+  "description": "Проверка орфографии в реальном времени для OpenCode 2 TUI. Русский и английский языки.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "opencode-v2",
+    "tui",
+    "spellcheck",
+    "spelling",
+    "russian",
+    "english"
+  ],
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./tui": "./dist/tui.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "embed": "node scripts/embed-dictionary.mjs",
+    "bundle": "esbuild src/tui.ts --bundle --format=esm --platform=node --target=node20 --external:node:* --external:@opencode/plugin --external:@opencode/plugin/* --external:@opentui/* --external:solid-js --external:solid-js/* --minify --outfile=dist/tui.mjs && esbuild src/index.ts --bundle --format=esm --platform=node --target=node20 --external:node:* --external:@opencode/plugin --external:@opencode/plugin/* --minify --outfile=dist/index.mjs",
+    "build": "npm run embed && npm run typecheck && npm run bundle",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "@opencode/plugin": ">=2.1.0",
+    "@opentui/core": ">=0.6.6"
+  },
+  "devDependencies": {
+    "@opencode/plugin": "2.1.4",
+    "@opentui/core": "^0.6.6",
+    "@types/node": "^22.0.0",
+    "dictionary-en": "4.0.0",
+    "dictionary-ru": "3.0.0",
+    "esbuild": "0.28.1",
+    "nspell": "2.1.5",
+    "solid-js": "^1.9.17",
+    "typescript": "5.5.4"
+  }
+}
