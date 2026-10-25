@@ -14,12 +14,14 @@
     "russian",
     "english"
   ],
+  "main": "./dist/index.mjs",
   "exports": {
     ".": "./dist/index.mjs",
     "./tui": "./dist/tui.mjs"
   },
   "files": [
     "dist",
+    "tui.ts",
     "README.md",
     "LICENSE"
   ],
@@ -43,5 +45,8 @@
     "nspell": "2.1.5",
     "solid-js": "^1.9.17",
     "typescript": "5.5.4"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.1.4"
   }
 }
