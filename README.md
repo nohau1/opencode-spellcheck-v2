@@ -1,5 +1,7 @@
 # opencode-spellcheck-v2
 
+[![GitHub](https://img.shields.io/badge/GitHub-nohau1%2Fopencode--spellcheck--v2-181717?logo=github)](https://github.com/nohau1/opencode-spellcheck-v2)
+
 Проверка орфографии в реальном времени для **OpenCode 2** (TUI). Плагин следит за текстом в поле ввода, помечает орфографические ошибки и предлагает исправления. Встроенные словари **русского и английского** языков, умное игнорирование кода, путей, URL и идентификаторов.
 
 > Это версия для **OpenCode 2** (`opencode v2.x`, API `@opencode/plugin/tui`). Для OpenCode 1 используйте первый репозиторий `opencode-spellcheck`.
@@ -23,7 +25,7 @@
 ### 1. Сборка
 
 ```bash
-git clone <этот-репозиторий> opencode-spellcheck-v2
+git clone https://github.com/nohau1/opencode-spellcheck-v2.git
 cd opencode-spellcheck-v2
 npm install
 npm run build

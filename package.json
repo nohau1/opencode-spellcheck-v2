@@ -4,6 +4,14 @@
   "description": "Проверка орфографии в реальном времени для OpenCode 2 TUI. Русский и английский языки.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nohau1/opencode-spellcheck-v2.git"
+  },
+  "homepage": "https://github.com/nohau1/opencode-spellcheck-v2#readme",
+  "bugs": {
+    "url": "https://github.com/nohau1/opencode-spellcheck-v2/issues"
+  },
   "keywords": [
     "opencode",
     "opencode-plugin",
