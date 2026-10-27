@@ -13,9 +13,11 @@
  */
 
 import { appendFileSync } from "node:fs"
+import { createEffect, createRoot, createSignal, Show } from "solid-js"
 
 import { Plugin } from "@opencode/plugin/tui"
 
+import { SpellingBanner, type SpellingError } from "./banner"
 import { SpellEngine } from "./engine"
 import { tokenize, type Token } from "./tokenizer"
 import { embeddedDictionaries } from "./generated/dict-data"
@@ -29,6 +31,8 @@ interface Options {
   minLength?: number
   extraWords?: string[]
   showStatusLine?: boolean
+  /** Also show the compact toast in addition to the red banner. */
+  showToast?: boolean
   fastMode?: boolean
   toastDuration?: number
   debugLog?: boolean
@@ -99,6 +103,7 @@ export default Plugin.define({
     let lastInput = ""
     let lastSignature = ""
     let debounceTimer: ReturnType<typeof setTimeout> | null = null
+    let disposeBannerSlots: Array<() => void> = []
 
     const readPrompt = (): string => {
       try {
@@ -108,23 +113,75 @@ export default Plugin.define({
       }
     }
 
+    // OpenCode 2 runs slot renders untracked, so signals do not re-render a
+    // mounted slot. Re-register the banner instead whenever errors change.
+    const renderBanner = (errors: SpellingError[]) => {
+      for (const dispose of disposeBannerSlots) {
+        try {
+          dispose()
+        } catch {
+          /* slot already released */
+        }
+      }
+      disposeBannerSlots = []
+      if (!showStatusLine || errors.length === 0) return
+
+      disposeBannerSlots.push(
+        context.ui.slot({
+          append: "session.composer.top",
+          render: () => <SpellingBanner errors={errors} />,
+        }),
+      )
+      disposeBannerSlots.push(
+        context.ui.slot({
+          append: "prompt.footer.status",
+          render: (input) => (
+            <Show when={!input.sessionID}>
+              <SpellingBanner errors={errors} />
+            </Show>
+          ),
+        }),
+      )
+    }
+
+    const [spellingErrors, setSpellingErrors] = createSignal<SpellingError[]>([])
+    const disposeBannerRoot = createRoot((dispose) => {
+      createEffect(() => {
+        debug(`effect errors=${spellingErrors().length}`)
+        renderBanner(spellingErrors())
+      })
+      return dispose
+    })
+
     const notify = (bad: Token[]) => {
       if (!showStatusLine || bad.length === 0) {
+        setSpellingErrors([])
         lastSignature = ""
         return
       }
+
+      const errors: SpellingError[] = bad.map((token) => ({
+        word: token.word,
+        suggestion: engine.check(token.word).suggestions[0],
+      }))
+      debug(`set errors=${errors.length}`)
+
       const signature = `${bad.length}:${bad
         .slice(0, 8)
         .map((token) => token.word)
         .join("|")}`
       if (signature === lastSignature) return
       lastSignature = signature
-      context.ui.toast.show({
-        title: "Орфография",
-        message: buildToastMessage(engine, bad),
-        variant: "error",
-        duration: toastDuration,
-      })
+      setSpellingErrors(errors)
+
+      if (options.showToast === true) {
+        context.ui.toast.show({
+          title: "Орфография",
+          message: buildToastMessage(engine, bad),
+          variant: "error",
+          duration: toastDuration,
+        })
+      }
     }
 
     const check = (input: string) => {
@@ -143,6 +200,7 @@ export default Plugin.define({
       lastInput = input
 
       if (!input) {
+        setSpellingErrors([])
         lastSignature = ""
         if (debounceTimer) clearTimeout(debounceTimer)
         debounceTimer = null
@@ -208,6 +266,15 @@ export default Plugin.define({
     return () => {
       clearInterval(pollTimer)
       if (debounceTimer) clearTimeout(debounceTimer)
+      for (const dispose of disposeBannerSlots) {
+        try {
+          dispose()
+        } catch {
+          /* slot already released */
+        }
+      }
+      disposeBannerSlots = []
+      disposeBannerRoot()
     }
   },
 })

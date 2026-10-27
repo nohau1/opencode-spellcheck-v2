@@ -1,1 +1,1 @@
-export { default } from "./dist/tui.mjs"
+export { default } from "./src/tui"
