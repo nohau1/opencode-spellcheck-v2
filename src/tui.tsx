@@ -87,12 +87,21 @@ export default Plugin.define({
 
     const showStatusLine = options.showStatusLine ?? true
 
+    // Durable custom vocabulary. The host owns this store, so it survives
+    // restarts and stays in sync across TUI instances.
+    const [customWords, updateCustomWords] = context.storage.store(
+      "custom-words",
+      { initial: { words: [] as string[] } },
+    )
+
+    const optionWords = Array.isArray(options.extraWords)
+      ? options.extraWords.filter(
+          (word): word is string => typeof word === "string",
+        )
+      : []
+
     const engine = new SpellEngine({
-      extraWords: Array.isArray(options.extraWords)
-        ? options.extraWords.filter(
-            (word): word is string => typeof word === "string",
-          )
-        : [],
+      extraWords: [...optionWords, ...customWords.words],
       dictionaries: embeddedDictionaries.map((dictionary) => ({
         aff: dictionary.aff,
         dic: dictionary.dic,
@@ -113,6 +122,34 @@ export default Plugin.define({
       }
     }
 
+    const addWord = (word: string) => {
+      const key = word.toLowerCase()
+      if (!customWords.words.includes(key)) {
+        updateCustomWords((draft) => {
+          draft.words.push(key)
+        })
+      }
+      engine.addWord(key)
+      lastSignature = ""
+      check(readPrompt())
+    }
+
+    const openAddDialog = async (errors: SpellingError[]) => {
+      if (errors.length === 0) return
+      const choice = await context.ui.dialog.select({
+        title: "Добавить в словарь",
+        options: errors.map((error) => ({
+          title: error.word,
+          value: error.word,
+          description: error.suggestion
+            ? `→ ${error.suggestion}`
+            : undefined,
+        })),
+      })
+      if (!choice) return
+      addWord(choice)
+    }
+
     // OpenCode 2 runs slot renders untracked, so signals do not re-render a
     // mounted slot. Re-register the banner instead whenever errors change.
     const renderBanner = (errors: SpellingError[]) => {
@@ -129,7 +166,12 @@ export default Plugin.define({
       disposeBannerSlots.push(
         context.ui.slot({
           append: "session.composer.top",
-          render: () => <SpellingBanner errors={errors} />,
+          render: () => (
+            <SpellingBanner
+              errors={errors}
+              onAdd={() => openAddDialog(errors)}
+            />
+          ),
         }),
       )
       disposeBannerSlots.push(
@@ -137,7 +179,10 @@ export default Plugin.define({
           append: "prompt.footer.status",
           render: (input) => (
             <Show when={!input.sessionID}>
-              <SpellingBanner errors={errors} />
+              <SpellingBanner
+                errors={errors}
+                onAdd={() => openAddDialog(errors)}
+              />
             </Show>
           ),
         }),
@@ -146,6 +191,10 @@ export default Plugin.define({
 
     const [spellingErrors, setSpellingErrors] = createSignal<SpellingError[]>([])
     const disposeBannerRoot = createRoot((dispose) => {
+      // Re-apply durable custom words if the host loads them asynchronously.
+      createEffect(() => {
+        for (const word of customWords.words) engine.addWord(word)
+      })
       createEffect(() => {
         debug(`effect errors=${spellingErrors().length}`)
         renderBanner(spellingErrors())

@@ -146,6 +146,13 @@ export class SpellEngine {
     await this.ready
   }
 
+  /** Accept a word permanently for this session (project vocabulary). */
+  addWord(word: string): void {
+    const key = word.toLowerCase()
+    this.personal.add(key)
+    this.cache.delete(key)
+  }
+
   /**
    * Synchronous check used inside the render/keystroke path. Returns a cached
    * or freshly-computed result. If the engine isn't ready yet it optimistically

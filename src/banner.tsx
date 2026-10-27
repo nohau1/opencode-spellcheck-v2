@@ -24,7 +24,10 @@ function describe(errors: SpellingError[]): string {
  * Slot renders run untracked in OpenCode 2, so this component is intentionally
  * static: the plugin re-registers the slot whenever the error list changes.
  */
-export function SpellingBanner(props: { errors: SpellingError[] }) {
+export function SpellingBanner(props: {
+  errors: SpellingError[]
+  onAdd?: () => void
+}) {
   return (
     <Show when={props.errors.length > 0}>
       <box
@@ -34,10 +37,23 @@ export function SpellingBanner(props: { errors: SpellingError[] }) {
         paddingLeft={1}
         paddingRight={1}
         flexShrink={0}
+        flexDirection="row"
+        justifyContent="space-between"
+        gap={1}
       >
-        <text fg="#ffffff" attributes={1}>
+        <text fg="#ffffff" attributes={1} flexShrink={1}>
           {describe(props.errors)}
         </text>
+        <Show when={props.onAdd}>
+          <text
+            fg="#fecaca"
+            attributes={1}
+            flexShrink={0}
+            onMouseUp={() => props.onAdd?.()}
+          >
+            [+ в словарь]
+          </text>
+        </Show>
       </box>
     </Show>
   )
